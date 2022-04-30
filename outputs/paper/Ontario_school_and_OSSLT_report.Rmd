@@ -75,11 +75,16 @@ kable(tiny_data, caption="The first 10 Rows of cleaned Dataset", booktabs=TRUE)%
 
 ## Visualization
 
-```{r plo1, fig.cap="The distribution of OSSLT pass rate by school type", echo = FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=4}
+```{r plo1, fig.cap="The distribution of OSSLT pass rate by school type", echo = FALSE, message = FALSE, results='hide', warning = FALSE, fig.width=8, fig.height=4}
 
 data %>% ggplot(aes(x=osslt_passes, fill=school_type)) +
     geom_histogram(binwidth=2.5, alpha=0.5, position="identity")+
     geom_vline(data=dat_mean, aes(xintercept=mean_size,  colour=school_type),linetype="dashed", size=1)+
+    labs(
+    x = "Percentage of OSSLT passes on first attempt",
+    fill = "School Type",
+    colour = "School Type"
+  )
   theme_minimal()
 ```
 
@@ -152,7 +157,7 @@ Table \@ref(tab:mtable) also showcased that Ontario public schools on average ha
 
 ### Catholic and public schools
 
-School type is a crucial variable when it comes to the OSSLT passing percentage on student's first attempt. This can be shown from both figure \@ref(fig:plot1) and the model summary table \@ref(tab:mtable). In figure \@ref(fig:plot1), catholic schools' OSSLT pass rates shares similar distribution shape with public schools but its mean and overall distribution are right to the relative position of public schools'. In \@ref(tab:mtable), the model predicted that Ontario catholic schools overall have a higher OSSLT pass rate than public schools by 3.59%. Further research is required to understand why catholic students performs better on OSSLT than public students, relevant information on the operational differences between two type of schools in Ontario can be helpful. This is also an opportunity for public district school boards to study and learn from catholic district school boards on ways to improve students academic achievements. 
+School type is a crucial variable when it comes to the OSSLT passing percentage on student's first attempt. This can be shown from both figure \@ref(fig:plo1) and the model summary table \@ref(tab:mtable). In figure \@ref(fig:plo1), catholic schools' OSSLT pass rates shares similar distribution shape with public schools but its mean and overall distribution are right to the relative position of public schools'. In \@ref(tab:mtable), the model predicted that Ontario catholic schools overall have a higher OSSLT pass rate than public schools by 3.59%. Further research is required to understand why catholic students performs better on OSSLT than public students, relevant information on the operational differences between two type of schools in Ontario can be helpful. This is also an opportunity for public district school boards to study and learn from catholic district school boards on ways to improve students academic achievements. 
 
 ### English as second language students
 
@@ -190,6 +195,8 @@ Due to given time constraint, this study were unable to successfully request stu
 \appendix
 
 # Appendix {-}
+
+## Additional figures
 
 ```{r plot2, fig.cap="High school's OSSLT pass rate vs High school's percentage of ESL students", echo = FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=4}
 
@@ -286,6 +293,123 @@ abline(0, 0)
 plot(fit, error, main = 'Scatter plot of fitted value vs errors')
 abline(0, 0)
 ```
+
+
+## Datasheet
+
+**Motivation**
+
+1. For what purpose was the dataset created?
+  - Using data extracted from school and student demographic report by Education, this analysis aims to study Ontario high school's student passing rate on OSSLT test by analysing the profile and demographics of each school specifically in school type and ratio statistics like ESL students, special education students, gifted students, low-income household, and parents with no education degree.
+2. Who created the dataset (e.g., which team, research group) and on behalf of which entity (e.g., company, institution, organization)?
+  - Ontario Ministry of Education
+3. Who funded the creation of the dataset?
+  - Ontario government funds and maintains the dataset
+
+**Composition**
+
+1. What do the instances that comprise the dataset represent (e.g., documents, photos, people, countries)?
+  - School information and student demographics: school name, school type, board name, loation, enrollment, EQAO and OSSLT results, gifted students ratio etc. 
+2. How many instances are there in total (of each type, if appropriate)?
+  -736 Ontario high school
+3. Does the dataset contain all possible instances or is it a sample (not necessarily random) of instances from a larger set?
+  - dataset contains all possible instances of Ontario highs schools that have full information in the data.
+4. Is there a label or target associated with each instance?
+  - School numbers and School names are available in the dataset.
+5. Is any information missing from individual instances?
+  - Multiple instances are missing all sorts on information.
+6. Are there any errors, sources of noise, or redundancies in the dataset?
+  - There are no errors, sources of noise or redundancies in the dataset.
+7. Is the dataset self-contained, or does it link to or otherwise rely on external resources (e.g., websites, tweets, other datasets)?
+  - The dataset is self-contained.
+8. Does the dataset contain data that might be considered confidential?
+  - There is no confidential data, the dataset is publicly available.
+9. Does the dataset identify any subpopulations (e.g., by age, gender)?
+  - The dataset comprises of all Ontario high school, and high school students.
+10. Is it possible to identify individuals (i.e., one or more natural persons), either directly or indirectly (i.e., in combination with other data) from the dataset? 
+  - It is not possible to identify individuals. 
+11. Does the dataset contain data that might be considered sensitive in any way?
+  - No
+13. Any other comments?
+  - None.
+
+**Collection Process**
+
+1. How was the data associated with each instance acquired?
+  - The data set was collected by the Ministry of Education in Ontario, Canada. Details can be found in the Data Methodology section of the report.
+2. What mechanisms or procedures were used to collect the data (e.g., hardware apparatuses or sensors, manual human curation, software programs, software APIs)?
+- Data set was collected from Ontario Open Data Catalogue
+3. If the dataset is a sample from a larger set, what was the sampling strategy (e.g., deterministic, probabilistic with specific sampling probabilities)?
+- It is not a sample, it includes all of the possible instances.
+4. Who was involved in the data collection process (e.g., students, crowdworkers, contractors) and how were they compensated (e.g., how much were crowdworkers paid)?
+- Satistic Canada for collecting Census data, EQAO office for recording OSSLT results, and Ontario Ministry of Education for recording School information
+5. Over what timeframe was the data collected?
+- The data consists of data from 2016, 2019 and 2022.
+6. Did you collect the data from the individuals in question directly, or obtain it via third parties or other sources (e.g., websites)?
+- The data is obtained from the official website of the Ontario Open Data Catalogue.
+7. Were the individuals in question notified about the data collection?
+- The individuals of the question are well aware of the survey as well as the data collection.
+8. Did the individuals in question consent to the collection and use of their data?
+- The individuals in question have consented to the collection and use of their data.
+9. If consent was obtained, were the consenting individuals provided with a mechanism to revoke their consent in the future or for certain uses?
+- There’s no open information available to tell if the consent for revokes were granted to the survey participants.
+10. Has an analysis of the potential impact of the dataset and its use on data subjects (e.g., a data protection impact analysis) been conducted?
+- No
+12. Any other comments?
+- None.
+
+**Preprocessing/ cleaning/ labeling**
+
+1. Was any preprocessing/cleaning/labeling of the data done?
+- The data was originally obtained in excel format and was converted and cleaned to a tidy csv file using R
+2. Was the “raw” data saved in addition to the preprocessed/cleaned/labeled data (e.g., to support unanticipated future uses)?
+- The raw data obtained is saved in outputs/data/raw_data.csv 
+3. Is the software that was used to preprocess/clean/label the data available?
+- R software is available at https://www.R-project.org/ 
+
+**Uses**
+
+1. Has the dataset been used for any tasks already?
+- The dataset has not been used for other tasks yet.
+2. Is there a repository that links to any or all papers or systems that use the dataset?
+- https://github.com/R300G/Ontario_School_Data
+3. What (other) tasks could the dataset be used for?
+- The dataset would be used for understanding the demographics that effect the results of OSSLT
+4. Is there anything about the composition of the dataset or the way it was collected and preprocessed/cleaned/labeled that might impact future uses?
+- The cleaning process is very generic and can used for future reports.
+
+**Distribution**
+
+1. Will the dataset be distributed to third parties outside of the entity (e.g., company, institution, organization) on behalf of which the dataset was created? 
+- No. The data set is for personal use only.
+2. How will the dataset will be distributed (e.g., tarball on website, API, GitHub)?
+- The dataset can be found in the Github repository mentioned in the report.
+3. When will the dataset be distributed?
+- The dataset has already been distributed in April 2022. 
+4. Will the dataset be distributed under a copyright or other intellectual property (IP) license, and/or under applicable terms of use (ToU)?
+- The report is under the MIT license.
+5. Have any third parties imposed IP-based or other restrictions on the data associated with the instances?
+- There are no IP-based or other restrictions on the data.
+6. Do any export controls or other regulatory restrictions apply to the dataset or to individual instances?
+- No.
+7. Any other comments?
+- None.
+
+
+**Maintenance**
+
+1. Who will be supporting/hosting/maintaining the dataset?
+- The author Charles Lu of the report will be maintaining the dataset. 
+2. How can the owner/curator/manager of the dataset be contacted (e.g., email address)?
+- They can be contacted via the email addresses listed in the README file on Github.
+3. Will the dataset be updated (e.g., to correct labeling errors, add new instances, delete instances)?
+- No dataset updates are scheduled yet. 
+4. If the dataset relates to people, are there applicable limits on the retention of the data associated with the instances (e.g., were the individuals in question told that their data would be retained for a fixed period of time and then deleted)?
+- The data set was collected and published as open data. There are no application limits on the retention of the data since it was collected voluntarily.
+5. Will older versions of the dataset continue to be supported/hosted/maintained?
+- No. Only the current data is available for now and future.
+6. If others want to extend/augment/build on/contribute to the dataset, is there a mechanism for them to do so?
+- The extensions, augmentations and contributions from other users are not supported.
 
 \newpage
 
