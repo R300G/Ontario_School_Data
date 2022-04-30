@@ -1,82 +1,189 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Key Demographics of High School Students that passes the Mandatory Ontario Secondary School Literacy Test (OSSLT) on First Attempt"
+subtitle: "An Analysis Based on the Ontario School and Student Demographic Data published by the ministry of Education"
 author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: LINK."
+  - Charles Lu
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "Using data extracted from school and student demographic report by Education, this analysis aims to study Ontario high school's student passing rate on OSSLT test by analysing the profile and demographics of each school specifically in school type and ratio statistics like ESL students, special education students, gifted students, low-income household, and parents with no education degree. The report concludes that, with deep understanding of the context and proper interpretations, all demographics shows an significant amount of effect on students ability to pass the OSSLT. In the future, this report can give educators a better understanding of causes and reasons of the OSSLT results, reseach further into the correlation between the test results and student demographics, eventually imrove on the current education system and hopefully raises overall literacy skills of all students."
+header-includes:
+  - \usepackage{placeins}
 output:
-  bookdown::pdf_document2
-toc: FALSE
+  bookdown::pdf_document2:
+    latex_engine: xelatex
+    toc: true
+    fig_caption: yes
 bibliography: references.bib
+thanks: "https://github.com/R300G/Ontario_School_Data"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-
-data <- readr::read_csv("../../inputs/data/cleaned_data.csv")
+library(lme4)
+library(knitr)
+library(kableExtra)
+library(stargazer)
+# code used to keep figures and text in the order https://gist.github.com/burchill/8873d2ade156b27e92a238a774ce2758
+knitr::knit_hooks$set(plot = function(x, options) {
+  paste0(knitr::hook_plot_tex(x, options), "\n\\FloatBarrier\n")
+})
+data <- readr::read_csv("../../outputs/data/cleaned_data.csv")
+dat_mean <- data %>%
+  group_by(school_type)%>%
+  summarise(mean_size = mean(osslt_passes))
 ```
 
 # Introduction
 
-You can and should cross-reference sections and sub-sections. For instance, Section \@ref(data). R Markdown automatically makes the sections lower case and adds a dash to spaces to generate labels, for instance, Section \@ref(first-discussion-point). 
+Canada is a multicultural country, Canadians come from a vast range of nations, races, religions, and heritage and together created an open and diversified community. This multicultural diversity comes from centuries of immigration. To work together as a whole community with many cultural differences, possessing the ability to communicate using Canada's first official language English is crucial. As the most populated province in Canada, the Ontario government have taken this very seriously, and they tackles the communication issue by focusing on improving the literacy skills of all school-age children, since students are the future of this society. Launched in 1999, the OSSLT (Ontario Secondary Literacy Test) is a standardized test that measure whether grade 10 Ontario high school students are meeting the minimum standard for literacy across all subjects up to the end of grade 9. Ontario ministry of education have included the successful completion of this literacy test as one of the requirements to earn an Ontario Secondary School Diploma. [@eqao_2022] Exploring school and student demographics that can potentially influences the results of OSSLT test is crucial as the findings can guide educators and school officials to revise and improve Ontario's education program and help all students to achieve provincial academic standards on literacy skills. 
 
+This paper aimed to determine the effect of various school and students demographics on the school's students ratio that passed OSSLT on their first attempt. The demographics that the paper will be examined are school type (public or catholic), English as second language students ratio, special education students ratio, gifted students ratio, percentage of students living in low-income household, and percentage of students whose parent's have no education degree. A linear mixed effect regression model was constructed to fit the school demographics data and tasked to estimate the percentage of students that passed OSSLT on first try. The results provide valuable insights. The models indicates that students living in low-income household and/or have parents with no education are less likely to pass OSSLT. On the other hand, students in catholic school and/or identified as gifted are more likely to pass OSSLT. Although ESL and special education also showed significant amount of influences on the chances of students succeeding in OSSLT, it is important to note that ESL and special education students receives special accommodations that minimizes the difficulty of the test and greatly increases the chances of them passing OSSLT. Thus, results for ESL and special education students should not be easily interpreted without context. With these results in mind, the paper suggest educators and school officials to study and learn from catholic and gifted education programs where students are more likely to achieve provincial literacy standards and focuses its attention and resources on special education students, and students coming from a family with low-income and no education. 
 
+This paper utilizes analytic programming language R [@citeR]. R packages tidyverse [@tidyverse], janitor [@janitor] and dplyr [@dplyr] are used to clean, organize and manipulate the data. Furthermore, R packages ggplot2 [@ggplot2], kableExtra [@kableextra] and stargazer [@stargazer] are used to create figures and tables. R package lme4 [@lme4] are used to create linear mixed effect model. Lastly, R packages bookdown [@bookdown] and tinytex [@tinytex] are used to generate the R markdown Report.
+
+This remaining paper will be separated into different sections. Firstly, an overview of the original data, its sources and collection methodology will be introduced. The paper will later on discuss the detailed process of cleaning and tidying the data, and visualizations of the data will also be included to better comprehend the structure and distribution of the data. Secondly, the model section will thoroughly disscuss the construction of the model used in this paper, model validity and assumptions will also be provided and explained. Then, the results section discuss the interpretaion of the significance and estimated coefficients from the model and its effect on the OSSLT pass ratio. Lastly, interpretations, key findings, future suggestions of the research results under the given context will be discuessed, limitations of this paper and future suggestions on future research will also be included in the end. 
 
 # Data
 
-Our data is of penguins (Figure \@ref(fig:bills)).
+## Data overview
 
-```{r bills, fig.cap="Bills of penguins", echo = FALSE}
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = FALSE) +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+This report utilizes data regarding school information and student demographic, published by the Ontario Ministry of Education.[@school_data] The dataset is publicly available through the Ontario Data Catalogue Portal. The data collection provides board information, school information, students EQAO and OSSLT result, as well as student demographic percentages on student parents, special education, first language spoken and new students to Canada. This report consolidates information from various databases, including Board School Identification Database (BSID), Ontario School Information System (OnSIS), OnSIS Preliminary 2019-2020, Education Quality and Accountability Office Database, and 2016 Census. This information is also available on the Ministry of Education's School Information Finder website by individual schools. The information in the School Information Finder is the most up-to-date that the Ministry of Education has at this time, based on reports from schools, school boards, EQAO, and Statistics Canada. The information is updated on a monthly basis, and is last refreshed on April 12, 2022. The population of this data set is all public, Roman Catholic, and provincial schools in Ontario. The data set does not include private schools, Education and Community Partnership Programs (ECPP), summer and night schools. 
+
+
+## The cleaning process
+
+Variables from the school information and students demographic data were cleaned and filtered in 01-data_cleaning.R under the scripts folder. Firstly, the paper aims to research the effect of school and students demographics on the Ontario Secondary Literacy Test pass rate. Thus, I filtered all the Ontario school observations that were not a high school, and also removed all of the schools with any NA (not available), SP (suppressed), N/D (no data), or N/R (not reported) in their recorded information. I then remove all the variables that are irrelevant to high school, such as grade range, school level, percentage of grade 3 students achieving provincial writing standards and much more. In order to continue create and maintain a tidy data set, I made following choices to select variables that provide similar information with other variables.
+
+- school_number, school_name was removed, as they both serve similar purpose to the index number of each observation. 
+
+- board_type  was removed and kept school type, as they both shows whether the school is catholic or public.
+
+- Only board_name was kept for observation's region information as I think this is the best way to group schools by region because schools under the same school board shares similar education curricular and programs.
+
+The variables this paper have selected to be included in the data set are school type, board name, percentage of students whose first language is not English, percentage of students receiving special education services, percentage of students identified as gifted, percentage of students that passed the grade 10 OSSLT on their first attempt, percentage of school-aged children who live in low-income households, and percentage of students whose parents have no degree, diploma or certificate. The variables were cleaned and renamed to school_type, board_name, esl_students (English as second language), se_students (special education), gifted_students, osslt_passes, low_income_household, no_degree_parents. To clarify, ESL students are English language learners whose first language is not English. Special education students are students who posses learning disabilities and requires tailored special education. Gifted students are identified intellectual students in the top 2% of the Ontario student population. 
+
+Lastly, cell values within the data were cleaned as some of them are inconsistent with the others. All characters were lower cased so that board_name like "TORONTO DSB" and "Toronto DSB" will be considered as the same thing. All percentage numeric values are in the same format, values like 33.33% or 0.3333 were all converted to 33.33. 
+
+A table with the first 10 rows of the filtered and cleaned data was shown in table \@ref(tab:tablec).
+
+```{r tablec,fig.cap="First 10 Rows of cleanned Dataset", echo = FALSE}
+
+tiny_data <- data %>%slice(1:10)
+kable(tiny_data, caption="The first 10 Rows of cleaned Dataset", booktabs=TRUE)%>% kable_styling(latex_options="scale_down")
 ```
 
-Talk more about it.
+## Visualization
 
-Also bills and their average (Figure \@ref(fig:billssssss)). (Notice how you can change the height and width so they don't take the whole page?)
+```{r plo1, fig.cap="The distribution of OSSLT pass rate by school type", echo = FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=4}
+
+data %>% ggplot(aes(x=osslt_passes, fill=school_type)) +
+    geom_histogram(binwidth=2.5, alpha=0.5, position="identity")+
+    geom_vline(data=dat_mean, aes(xintercept=mean_size,  colour=school_type),linetype="dashed", size=1)+
+  theme_minimal()
+```
+
+To have a deeper understanding of the data, figure \@ref(fig:plo1) represent the visualizations of the distribution of OSSLT pass ratio based on the type of high school. In doing so, figure \@ref(fig:plo1) showcases the relationship between OSSLT passes and school type, and how each school type influences the chances of students passing OSSLT. Firstly, the single green bin in the figure represents the OSSLT pass rate of the only one provincial and demonstrations high school in Ontario. The school provides educations for special education students who are deaf, blind, deafblind or have severe learning disabilities, and it is reasonable to see that the school had a 33% pass ratio. Moreover, between public and catholic school, there are way more public schools than catholic schools in Ontario, as the blue bin surpasses the red bin across all OSSLT pass ratio. However, catholic school's OSSLT pass rates shares similar distribution shape with public school's but its mean and overall distribution are more right to the relative position of public school's. Thus, it is reasonable to interpret that catholic school students overall are a little bit more likely to pass OSSLT than public school students.
 
 
+The following figures represent the visualizations of the linear relationship between the school's percentage of OSSLT passes on first attempt to  multiple relevant school demographics such as ESL students ratio, special education students ratio, gifted students ratio, proportion of student in low income household and proportion of student's parents have no education degree. The report aims to study the relationship between school's OSSLT pass ratio and its demographic background, and how each demographic information can influence each students chances of achieving OSSLT standard. Due to the large amount of figures, this section will showcase only the scatter plot of OSSLT pass rate by special education students. The data visualization for other demographic backgrounds are available in the appendix.
 
 
+```{r plot3, fig.cap="High school's OSSLT pass rate vs High school's percentage of SE students", echo = FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=4}
+
+ggplot(data, aes(osslt_passes, se_students)) +
+  geom_point(color = "steel blue") +
+  geom_smooth(method=lm, se=FALSE, linetype="dashed",
+             color="darkred")+
+  labs(
+    x = "Percentage of special education students",
+    y = "Percentage of OSSLT passes on first attempt",
+  )+
+  theme_minimal()
+
+```
 
 # Model
 
-\begin{equation}
-Pr(\theta | y) = \frac{Pr(y | \theta) Pr(\theta)}{Pr(y)}  (\#eq:bayes)
-\end{equation}
+## Model construction 
 
-Equation \@ref(eq:bayes) seems useful, eh?
+The study wishes to investigate the effect of Ontario high schools' demographic on its academic achievement results. More specifically, OSSLTs conducted among grade 10 students every year is one of the standard measurements for academic results. Thus, osslt_passes representing the pass percentage of OSSLT on first attempt was used as the response variable for this model. Variables representing Ontario high school's demographics including, school_type, esl_students, se_students, gifted_students, low_income_household, no_degree_parents were used as the explanatory variables. Since the response variable osslt_passes is a continuous variable, and linear relationships between osslt_passes and explantory variables were shown in the data section and appendix, the study selected linear model for the analysis. Provincial and deomonstration school are removed as a school type due to its sample size of 1. Furthermore, a linear mixed effect model was used with all the explanatory variables as fixed effects and board_name representing the school board of the high school as a random effect. The random effect was implemented in the model due to the potential correlations of osslt_passes between schools within the same school board, correlations may be caused by reasons like, geographically similar demographics, or similar education curriculum and programs under the same school board. Although some correlations may exists between the explanatory variables, no interaction term was considered because intuitively none of the school demographics would influence the effect of other school demographics on OSSLT pass rates. 
 
-Here's a dumb example of how to use some references: In paper we run our analysis in `R` [@citeR]. We also use the `tidyverse` which was written by @thereferencecanbewhatever If we were interested in baseball data then @citeLahman could be useful. 
+The model equation is as follow:
 
-We can use maths by including latex between dollar signs, for instance $\theta$.
+$osslt\_passes_{ij} = \beta_{0} + \beta_{1} (school\_type\_public_{ij}) + \beta_{2} (esl\_students_{ij}) + \beta_{3} (se\_students_{ij})+ \beta_{4} (gifted\_students_{ij}) + \beta_{5} (low\_income\_household_{ij}) + \beta_{6} (no\_degree\_parents_{ij}) + board\_name_{j} + Residual_{ij}$
 
+The response for this model is the OSSLT pass rate on first attempt of high school $i$ under school board $j$. Variable $school\_type$ is a indicator fixed effect with two levels, $catholic$ and $public$, where $catholic$ were selected as the reference level. Provincial was removed from the data as one of the $school\_type$ because there exists only one school in Ontario with such school type, the sample size was too small to be considered in the model. Variables $esl\_students_{ij}$, $se\_students_{ij}$, $gifted\_students_{ij}$, $low\_income\_household_{ij}$ and $no\_degree\_parents_{ij}$ are continuous fixed effect and represents various school demographics in percentage of school $i$ under the school board $j$. $board\_name_{j}$ is the random effect responsible for the correlations of OSSLT results between schools under the same school board $j$. $Residual_{ij}$ is the error term account for the individual variances of each school $i$ under board $j$.
+
+## Model Validation
+
+There are 4 main assumptions for the lienar mixed effect mdoel:
+
+1. There exists linearity between $OSSLT\_passes$ and other continuous fixed effect variables.
+2. Random effect $board\_name$ follows the normal distribution with a mean of 0 and constant variance.
+3. Error term $Residual$ follows the normal distribution with a mean of 0 and constant variance.
+4. Random effect and error term are independent.
+
+For the first assumption, the validity of the linearity between $OSSLT\_passes$ and other school demographics were already mentioned in the creation of the model and the scatter plots that checks the linearity between them are available in the appendix section. Secondly, histogram and QQ plot of the random effect $board\_name$ were made to check validity of its normal distribution with mean of 0, and scatter plots of $board\_name$ against its index and fitted values of the model were also made to check the random effect's constant variance. The same 4 plots were made again for error term $Residual$ to check whether it follows normal distribution with mean of 0 and its constant variance. Lastly, random effect $board\_name$ and error term are indeed independent to each other because error term are random values assigned each observations in the data and should be independent to all variables other than $school\_id$ and $school\_name$. 
 
 # Results
 
+```{r model, echo = FALSE}
+dat1 <- data %>%
+  filter(school_type != "provincial")
+m1<-lmer(osslt_passes  ~ school_type + esl_students + se_students+gifted_students+low_income_household+no_degree_parents+(1|board_name),data = dat1)
+class(m1) <- "lmerMod"
+```
+
+```{r mtable, results='asis',echo=FALSE}
+stargazer::stargazer(m1, label = "tab:mtable", title = "The summary statistic of the fitted model", header=FALSE, type='latex')
+```
+
+
+Table \@ref(tab:mtable) showcases the summary statistics of the linear mixed effect model constructed previously. Most explanatory variables are statistically significant at a 99% confidence level, while $school_type$ being the only variable significant at 95% confidence level. It is important to note that, the confidence level should not be used as a strict threshold to determine variable's significance to the purpose of the study, and it should be interpreted as an assessments of observations or effects relative to sampling variation. 
+
+The intercept of the model is 100.88% of OSSLT pass rate, however it is inappropriate to interpret the intercept as a measure of OSSLT passes for schools with reference level demographics as it is impossible to have a pass rate higher than 100%. The constant should only be interpret as the intercept for the functionality of the model in the context of the provided data. 
+
+Table \@ref(tab:mtable) also showcased that Ontario public schools on average have a lower OSSLT pass rate than catholic schools by 3.59%. Unexpectedly, English as second language students showed a slight positive correlation with the OSSLT pass rate, as an increasing percentage of ESL students results in an 0.07% increase in OSSLT pass rate under the context of provided Ontario high school data. On the other hand, percentage increase of special education students results in an 0.74% decrease in OSSLT pass rate, percentage increase of gifted students results in an 0.35 increase in OSSLT pass rate, percentage increase of students classified within low income households reduces OSSLT passes by 0.23% and percentage increase of students with parents that have no degree reduces OSSLT passes by 0.49%. 
+
 # Discussion
 
-## First discussion point
+## Interpretation of results and findings
 
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+### Catholic and public schools
 
-## Second discussion point
+School type is a crucial variable when it comes to the OSSLT passing percentage on student's first attempt. This can be shown from both figure \@ref(fig:plot1) and the model summary table \@ref(tab:mtable). In figure \@ref(fig:plot1), catholic schools' OSSLT pass rates shares similar distribution shape with public schools but its mean and overall distribution are right to the relative position of public schools'. In \@ref(tab:mtable), the model predicted that Ontario catholic schools overall have a higher OSSLT pass rate than public schools by 3.59%. Further research is required to understand why catholic students performs better on OSSLT than public students, relevant information on the operational differences between two type of schools in Ontario can be helpful. This is also an opportunity for public district school boards to study and learn from catholic district school boards on ways to improve students academic achievements. 
 
-## Third discussion point
+### English as second language students
 
-## Weaknesses and next steps
+Interestingly, the model summary table \@ref(tab:mtable) indicates an increasing percentage of ESL students results in an 0.07% increase in OSSLT pass rate under the context of provided Ontario high school data. Intuitively, the result is inexplicable, as students who have English as their second language should face higher difficulty to pass the literacy test. However, upon further research, Ontario ESL students are eligible to request special accommodations such as additional test time with supervision, participation deferral, or enroll into a full-credit course as alternative. [@esl] According to the Ontario provincial literacy result report 2018-2019, only 75% of English language learners participated in the test.[@osslt] This heavily affect the model's ability to estimate the literacy skills on students with English as second language. ESL students who decides to participate in the OSSLT are more likely to pass the test due to their eligibility on extra test time. ESL students who decides defer or take alternative course will result in an over estimation of the school's OSSLT pass rate, as these students are less likely to pass the test and did not end up taking the test. Thus, the positive correlation between OSSLT passes and ESL students should definitely not be interpreted as effect of ESL students on academic literacy skills, it is only a representation of the correlation between a school's ESL students percentage and its OSSLT pass rate under the context of Ontario provincial rulings and accommodations regarding ESL students with OSSLT. 
 
-Weaknesses and next steps should also be included.
+### Special education students
+
+For special education students, figure \@ref(fig:plot3) shows a clear negative correlation between OSSLT pass rate and percentage of students with special education needs. The model summary table \@ref(tab:mtable) also showcases an increasing percentage of special education students results in an 0.07% decrease in OSSLT pass rate. Unlike English language learner, special education students are not eligible for deferrals or alternative courses, but special accommodations such as extra time, sign language or an oral interpreter, unified English Braille version of the test, or additional assistive technology can be provided depending on the situation of each special education students.[@se] Even with assistance of the accommodations, special education students still find themselves a harder time to pass the OSSLT, only 50% of participating special education students pass the OSSLT in 2019. [@osslt] Thus, although an over prediction exists from the model on the literacy skills of special education students in Ontario high school, they remain to struggle in their academic learning, and passing the OSSLT. Educators should consider provide more attention and funding to the special education program as the students not only require additional help to pass the test, but also a better and more effective learning process in high school. 
+
+### Gifted students
+
+Unsurprisingly, gifted students are more likely to pass the OSSLT as shown in both figure \@ref(fig:plot4) and table \@ref(tab:mtable). Ontario's self-contained gifted education programs gives intellectually gifted students an opportunity to work with other like-minded peers and learn materials more relevant to their interests and abilities than in a regular class. [@ddsb] Therefore, it is reasonable to state that having more gifted students in the high school will results a higher OSSLT pass rate, and gifted students on average are likely to possess higher literacy skills than normal students. However, Ontario's gifted program only admits 2% of the applicants every year, and gifted students make up a very small percentage of the overall student population. Thus, area of improvement on such matter is limited, since the program was designed for only limited amount of students. Learning from the gifted program, revising and improving the current education program for regular students may be a consideration for the purpose of improving over all literacy skills of Ontario high schools.
+
+### Parents' income and education
+
+Utilizing the data collected from 2016 census and 2019 OSSLT results, high schools with higher percentage of low income household and higher percentage of student's parents with no diplomacy are likely to have a lower OSSLT pass rate as shown in figure \@ref(fig:plot5), figure \@ref(fig:plot6), and  table \@ref(tab:mtable). Students from a lower income households are likely to have a less ideal study environment at home and schools that locates in poor communities are also likely to provide less ideal study environment all due to the lack of financial funding and resources. On the other hand, parent's status of low education can possibly influences the student's perception on the importance of education.  Ministry of education and school boards can consider introducing educational financial supports for students with low income households if not already implemented, and may be reallocate more funding to school located in low income neighborhood. They can also consider focus on promoting the importance of academic learning among high schools located in neighborhood with low educations overall. 
+
+
+## Weaknesses
+
+There are three weaknesses of this report that should be discussed. Firstly, the purpose of this paper is to study Ontario high school student's academic literacy skills and the background characteristics that effects it. To promote data transparency while protecting individual student's privacy, Ontario ministry of education hid the student level data, but published the school level data with various student demographics in percentage. Modeling with school level data are less accurate than student level data when determining key student demographics that influences their academic skills, since each observation in school level data are essentially grouped summary of student level data. 
+
+Secondly, as mentioned in the interpretations of results and findings section, English as second language and special education students are granted special accommodations like deferrals, extra time and other assistance to help them pass OSSLT, as passing this test is a high school diploma requirement for all Ontario students. Thus, students who passed OSSLT on first attempt with special accommodations does not fully represents their true literacy skills and the model's estimated effect of ESL and SE students on OSSLT pass rate should only interpreted under the condition of understanding the context of OSSLT accommodation guidelines. 
+
+Finally, the creation of the school information and student demographics data set published by Ontario ministry of Education consists of multiple sources of data. As mentioned in the data section, high school information collected from OnSIS system were updated and maintained by Education at March 2022, OSSLT results were reported by the EQAO office during 2019, and other student demographics information collected from Census published by Statistic Canada were conducted during 2016. thus, there exists inconsistencies between data variables' updated dates. Using the data, the inconsistencies will likely effect the accuracy of the fitted model. School information would not be an issue as their data are less likely to be different over time. However, student demographics during 2019 are much more likely to be a bit different from 2016 when Census was conducted, and predicting 2019 OSSLT results from 2016 student demographics can potentially leads to incorrect correlations and interpretations. 
+
+## Future directions
+
+Due to given time constraint, this study were unable to successfully request student level data from Ontario ministry of Education. However, using student level data for future studies is strongly suggested if it is accessible. Modeling with student level data will be much more accurate and will solve some of the limitations presented in this paper. Additionally, using specific OSSLT score from each students instead of OSSLT passes as response variable will also increase the effect of the model by a large margin. Moreover, although it important to update the latest data, Education should consider align the update dates with all the information, as it may cause confusion and misinterpretations if data users were not notified. Lastly, OSSLT were discontinued during the Pandemic season, it would be interesting to revisit and conduct future studies once pandemic is over. The aftermath of pandemic could be considered as one of the new student demographics when determining future results of high school student's academic skills. 
+
+
 
 \newpage
 
@@ -84,9 +191,101 @@ Weaknesses and next steps should also be included.
 
 # Appendix {-}
 
+```{r plot2, fig.cap="High school's OSSLT pass rate vs High school's percentage of ESL students", echo = FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=4}
 
-# Additional details
+ggplot(data, aes(osslt_passes, esl_students)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method=lm, se=FALSE, linetype="dashed",
+             color="darkred")+
+  labs(
+    x = "Percentage of English as second language students",
+    y = "Percentage of OSSLT passes on first attempt",
+  )+
+  theme_minimal()
 
+```
+
+
+```{r plot4, fig.cap="High school's OSSLT pass rate vs High school's percentage of gifted students", echo = FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=4}
+
+ggplot(data, aes(osslt_passes, gifted_students)) +
+  geom_point(color = "steel blue") +
+  geom_smooth(method=lm, se=FALSE, linetype="dashed",
+             color="darkred")+
+  labs(
+    x = "Percentage of gifted students",
+    y = "Percentage of OSSLT passes on first attempt",
+  )+
+  theme_minimal()
+
+```
+
+
+
+```{r plot5, fig.cap="High school's OSSLT pass rate vs High school's percentage of students in low income household", echo = FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=4}
+
+ggplot(data, aes(osslt_passes, low_income_household)) +
+  geom_point(color = "steel blue") +
+  geom_smooth(method=lm, se=FALSE, linetype="dashed",
+             color="darkred")+
+  labs(
+    x = "Percentage of students in low income household",
+    y = "Percentage of OSSLT passes on first attempt",
+  )+
+  theme_minimal()
+
+```
+
+
+```{r plot6, fig.cap="High school's OSSLT pass rate vs High school's percentage of student's parents with no degree", echo = FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=4}
+
+ggplot(data, aes(osslt_passes, no_degree_parents)) +
+  geom_point(color = "steel blue") +
+  geom_smooth(method=lm, se=FALSE, linetype="dashed",
+             color="darkred")+
+  labs(
+    x = "Percentage of student's parents with no degree",
+    y = "Percentage of OSSLT passes on first attempt",
+  )+
+  theme_minimal()
+
+```
+
+
+
+```{r plot7, echo = FALSE, message = FALSE, warning = FALSE, fig.cap ='The graphs of checking assumptions for random effect in the model', fig.width = 10, fig.height = 6}
+random_effect <- lme4::ranef(m1)[[1]]
+random_effect <- random_effect%>% mutate(intercept = random_effect$`(Intercept)`)
+error <- residuals(m1)
+fit <- fitted(m1)
+par(mfrow = c(2, 2))
+# histogram 
+hist( x= random_effect$intercept, xlab = 'Random effect', main = 'Histogram of random effect')
+# qq plot
+qqnorm(random_effect$intercept, main = 'QQ plot of random effect')
+qqline(random_effect)
+# plot the random effect
+plot(random_effect$intercept, main = 'Scatter plot of random effect by index order')
+abline(0, 0)
+plot(fit, error, main = 'Scatter plot of fitted value vs errors')
+abline(0, 0)
+```
+
+```{r plot8, echo = FALSE, message = FALSE, warning = FALSE, fig.cap ='The graphs of checking assumptions for errors in the model', fig.width = 10, fig.height = 6}
+# for errors: conditional residuals
+par(mfrow = c(2, 2))
+# histogram 
+hist(error, main = 'Histogram of errors')
+# qq plot
+qqnorm(error, main = 'QQ plot of errors')
+qqline(error)
+# plot errors
+plot(error, main = 'Scatter plot of errors vs index')
+abline(0, 0)
+# scatter plot of fitted value and errors
+plot(fit, error, main = 'Scatter plot of fitted value vs errors')
+abline(0, 0)
+```
 
 \newpage
 
